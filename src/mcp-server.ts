@@ -10,59 +10,59 @@ import * as fs from "fs";
 import logger from "./logger.js";
 import { chromium, Browser } from "playwright";
 
-// 全局浏览器实例
+// 전역 브라우저 인스턴스
 let globalBrowser: Browser | undefined = undefined;
 
-// 创建MCP服务器实例
+// MCP 서버 인스턴스 생성
 const server = new McpServer({
   name: "google-search-server",
   version: "1.0.0",
 });
 
-// 注册Google搜索工具
+// Google 검색 도구 등록
 server.tool(
   "google-search",
-  "使用Google搜索引擎查询实时网络信息，返回包含标题、链接和摘要的搜索结果。适用于需要获取最新信息、查找特定主题资料、研究当前事件或验证事实的场景。结果以JSON格式返回，包含查询内容和匹配结果列表。",
+  "Google 검색 엔진을 사용하여 실시간 네트워크 정보를 조회하고, 제목, 링크, 요약이 포함된 검색 결과를 반환합니다. 최신 정보를 얻거나, 특정 주제 자료를 찾거나, 현재 사건을 연구하거나, 사실을 검증하는 시나리오에 적합합니다. 결과는 JSON 형식으로 반환되며, 쿼리 내용과 일치하는 결과 목록을 포함합니다.",
   {
     query: z
       .string()
       .describe(
-        "搜索查询字符串。为获得最佳结果：1)优先使用英语关键词搜索，因为英语内容通常更丰富、更新更及时，特别是技术和学术领域；2)使用具体关键词而非模糊短语；3)可使用引号\"精确短语\"强制匹配；4)使用site:域名限定特定网站；5)使用-排除词过滤结果；6)使用OR连接备选词；7)优先使用专业术语；8)控制在2-5个关键词以获得平衡结果；9)根据目标内容选择合适的语言（如需要查找特定中文资源时再使用中文）。例如:'climate change report 2024 site:gov -opinion' 或 '\"machine learning algorithms\" tutorial (Python OR Julia)'"
+        "검색 쿼리 문자열. 최상의 결과를 위해: 1) 영어 키워드 검색을 우선 사용하세요. 영어 콘텐츠가 일반적으로 더 풍부하고 최신이며, 특히 기술 및 학술 분야에서 그렇습니다; 2) 모호한 구문보다는 구체적인 키워드를 사용하세요; 3) 따옴표 \"정확한 구문\"를 사용하여 강제 매칭할 수 있습니다; 4) site:도메인을 사용하여 특정 웹사이트를 제한하세요; 5) -를 사용하여 제외어를 필터링하세요; 6) OR을 사용하여 대안어를 연결하세요; 7) 전문 용어를 우선 사용하세요; 8) 균형 잡힌 결과를 위해 2-5개의 키워드로 제한하세요; 9) 대상 콘텐츠에 따라 적절한 언어를 선택하세요 (특정 중국어 리소스를 찾을 필요가 있을 때만 중국어 사용). 예: 'climate change report 2024 site:gov -opinion' 또는 '\"machine learning algorithms\" tutorial (Python OR Julia)'"
       ),
     limit: z
       .number()
       .optional()
-      .describe("返回的搜索结果数量 (默认: 10，建议范围: 1-20)"),
+      .describe("반환할 검색 결과 수 (기본값: 10, 권장 범위: 1-20)"),
     timeout: z
       .number()
       .optional()
-      .describe("搜索操作的超时时间(毫秒) (默认: 30000，可根据网络状况调整)"),
+      .describe("검색 작업의 타임아웃 시간(밀리초) (기본값: 30000, 네트워크 상태에 따라 조정 가능)"),
   },
   async (params) => {
     try {
       const { query, limit, timeout } = params;
-      logger.info({ query }, "执行Google搜索");
+      logger.info({ query }, "Google 검색 실행");
 
-      // 获取用户主目录下的状态文件路径
+      // 사용자 홈 디렉토리 하위의 상태 파일 경로 가져오기
       const stateFilePath = path.join(
         os.homedir(),
         ".google-search-browser-state.json"
       );
-      logger.info({ stateFilePath }, "使用状态文件路径");
+      logger.info({ stateFilePath }, "상태 파일 경로 사용");
 
-      // 检查状态文件是否存在
+      // 상태 파일 존재 여부 확인
       const stateFileExists = fs.existsSync(stateFilePath);
 
-      // 初始化警告消息
+      // 초기화 경고 메시지
       let warningMessage = "";
 
       if (!stateFileExists) {
         warningMessage =
-          "⚠️ 注意：浏览器状态文件不存在。首次使用时，如果遇到人机验证，系统会自动切换到有头模式让您完成验证。完成后，系统会保存状态文件，后续搜索将更加顺畅。";
+          "⚠️ 주의: 브라우저 상태 파일이 존재하지 않습니다. 처음 사용할 때, 사람이 아닌지 확인(캡차)에 직면하면 시스템이 자동으로 헤드 모드로 전환하여 검증을 완료할 수 있도록 합니다. 완료 후 시스템이 상태 파일을 저장하므로, 이후 검색이 더 원활해집니다.";
         logger.warn(warningMessage);
       }
 
-      // 使用全局浏览器实例执行搜索
+      // 전역 브라우저 인스턴스를 사용하여 검색 실행
       const results = await googleSearch(
         query,
         {
@@ -73,7 +73,7 @@ server.tool(
         globalBrowser
       );
 
-      // 构建返回结果，包含警告信息
+      // 경고 정보를 포함한 반환 결과 구성
       let responseText = JSON.stringify(results, null, 2);
       if (warningMessage) {
         responseText = warningMessage + "\n\n" + responseText;
@@ -88,14 +88,14 @@ server.tool(
         ],
       };
     } catch (error) {
-      logger.error({ error }, "搜索工具执行错误");
+      logger.error({ error }, "검색 도구 실행 오류");
 
       return {
         isError: true,
         content: [
           {
             type: "text",
-            text: `搜索失败: ${
+            text: `검색 실패: ${
               error instanceof Error ? error.message : String(error)
             }`,
           },
@@ -105,13 +105,13 @@ server.tool(
   }
 );
 
-// 启动服务器
+// 서버 시작
 async function main() {
   try {
-    logger.info("正在启动Google搜索MCP服务器...");
+    logger.info("Google 검색 MCP 서버 시작 중...");
 
-    // 初始化全局浏览器实例
-    logger.info("正在初始化全局浏览器实例...");
+    // 전역 브라우저 인스턴스 초기화
+    logger.info("전역 브라우저 인스턴스 초기화 중...");
     globalBrowser = await chromium.launch({
       headless: true,
       args: [
@@ -143,35 +143,35 @@ async function main() {
       ],
       ignoreDefaultArgs: ["--enable-automation"],
     });
-    logger.info("全局浏览器实例初始化成功");
+    logger.info("전역 브라우저 인스턴스 초기화 성공");
 
     const transport = new StdioServerTransport();
     await server.connect(transport);
 
-    logger.info("Google搜索MCP服务器已启动，等待连接...");
+    logger.info("Google 검색 MCP 서버가 시작되었습니다. 연결을 기다리는 중...");
 
-    // 设置进程退出时的清理函数
+    // 프로세스 종료 시 정리 함수 설정
     process.on("exit", async () => {
       await cleanupBrowser();
     });
 
-    // 处理Ctrl+C (Windows和Unix/Linux)
+    // Ctrl+C 처리 (Windows 및 Unix/Linux)
     process.on("SIGINT", async () => {
-      logger.info("收到SIGINT信号，正在关闭服务器...");
+      logger.info("SIGINT 신호를 받았습니다. 서버를 종료하는 중...");
       await cleanupBrowser();
       process.exit(0);
     });
 
-    // 处理进程终止 (Unix/Linux)
+    // 프로세스 종료 처리 (Unix/Linux)
     process.on("SIGTERM", async () => {
-      logger.info("收到SIGTERM信号，正在关闭服务器...");
+      logger.info("SIGTERM 신호를 받았습니다. 서버를 종료하는 중...");
       await cleanupBrowser();
       process.exit(0);
     });
 
-    // Windows特定处理
+    // Windows 특정 처리
     if (process.platform === "win32") {
-      // 处理Windows的CTRL_CLOSE_EVENT、CTRL_LOGOFF_EVENT和CTRL_SHUTDOWN_EVENT
+      // Windows의 CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT 처리
       const readline = await import("readline");
       const rl = readline.createInterface({
         input: process.stdin,
@@ -179,28 +179,28 @@ async function main() {
       });
 
       rl.on("SIGINT", async () => {
-        logger.info("Windows: 收到SIGINT信号，正在关闭服务器...");
+        logger.info("Windows: SIGINT 신호를 받았습니다. 서버를 종료하는 중...");
         await cleanupBrowser();
         process.exit(0);
       });
     }
   } catch (error) {
-    logger.error({ error }, "服务器启动失败");
+    logger.error({ error }, "서버 시작 실패");
     await cleanupBrowser();
     process.exit(1);
   }
 }
 
-// 清理浏览器资源
+// 브라우저 리소스 정리
 async function cleanupBrowser() {
   if (globalBrowser) {
-    logger.info("正在关闭全局浏览器实例...");
+    logger.info("전역 브라우저 인스턴스를 종료하는 중...");
     try {
       await globalBrowser.close();
       globalBrowser = undefined;
-      logger.info("全局浏览器实例已关闭");
+      logger.info("전역 브라우저 인스턴스가 종료되었습니다");
     } catch (error) {
-      logger.error({ error }, "关闭浏览器实例时发生错误");
+      logger.error({ error }, "브라우저 인스턴스 종료 중 오류 발생");
     }
   }
 }

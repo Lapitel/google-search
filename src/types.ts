@@ -1,5 +1,5 @@
 /**
- * 搜索结果接口
+ * 검색 결과 인터페이스
  */
 export interface SearchResult {
   title: string;
@@ -8,7 +8,7 @@ export interface SearchResult {
 }
 
 /**
- * 搜索响应接口
+ * 검색 응답 인터페이스
  */
 export interface SearchResponse {
   query: string;
@@ -16,25 +16,25 @@ export interface SearchResponse {
 }
 
 /**
- * 命令行选项接口
+ * 명령줄 옵션 인터페이스
  */
 export interface CommandOptions {
   limit?: number;
   timeout?: number;
-  headless?: boolean; // 已废弃，但保留以兼容现有代码
+  headless?: boolean; // 더 이상 사용되지 않지만 기존 코드와의 호환성을 위해 유지
   stateFile?: string;
   noSaveState?: boolean;
-  locale?: string; // 搜索结果语言，默认为中文(zh-CN)
+  locale?: string; // 검색 결과 언어, 기본값은 한국어(ko-KR)
 }
 
 /**
- * HTML响应接口 - 用于获取原始搜索页面HTML
+ * HTML 응답 인터페이스 - 원본 검색 페이지 HTML을 가져오는 데 사용
  */
 export interface HtmlResponse {
-  query: string;    // 搜索查询
-  html: string;     // 页面HTML内容（已清理，不包含CSS和JavaScript）
-  url: string;      // 搜索结果页面URL
-  savedPath?: string; // 可选，如果HTML保存到文件，则为保存路径
-  screenshotPath?: string; // 可选，网页截图保存路径
-  originalHtmlLength?: number; // 原始HTML长度（包含CSS和JavaScript）
+  query: string;    // 검색 쿼리
+  html: string;     // 페이지 HTML 내용 (정리됨, CSS 및 JavaScript 제외)
+  url: string;      // 검색 결과 페이지 URL
+  savedPath?: string; // 선택사항, HTML이 파일로 저장된 경우 저장 경로
+  screenshotPath?: string; // 선택사항, 웹페이지 스크린샷 저장 경로
+  originalHtmlLength?: number; // 원본 HTML 길이 (CSS 및 JavaScript 포함)
 }
